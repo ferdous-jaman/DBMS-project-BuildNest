@@ -1093,6 +1093,8 @@ JOIN Sector_Heads sh ON w.HeadID = sh.HeadID
 GROUP BY sh.BuildingID;
 
 -- 48. Find workers paid more than 50,000 total
+SELECT WorkerID, SUM(AmountPaid) AS TotalPaid 
+FROM Worker_Payments 
 GROUP BY WorkerID 
 HAVING TotalPaid > 50000;
 
@@ -1103,7 +1105,3 @@ SELECT * FROM Buildings WHERE BuildingID IN (SELECT BuildingID FROM Building_Ins
 SELECT SupplierID, SUM(QuantityOrdered) AS TotalQuantity 
 FROM Material_Orders 
 GROUP BY SupplierID;
-SELECT WorkerID, SUM(AmountPaid) AS TotalPaid 
-FROM Worker_Payments 
-
-

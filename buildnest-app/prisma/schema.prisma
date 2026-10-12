@@ -1,0 +1,318 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Owners {
+  OwnerID            Int             @id @default(autoincrement())
+  FullName           String          @db.VarChar(100)
+  Phone              String          @db.VarChar(15)
+  Email              String?         @db.VarChar(100)
+  ResidentialAddress String?         @db.VarChar(255)
+  TotalInvestment    Decimal?        @db.Decimal(15, 2)
+  Owner_Payments     Owner_Payments[]
+  Invoices           Invoices[]
+}
+
+model Buildings {
+  BuildingID              Int                       @id @default(autoincrement())
+  ProjectName             String                    @db.VarChar(100)
+  Location                String?                   @db.VarChar(255)
+  NumberOfFloors          Int?
+  NumberOfApartments      Int?
+  TotalCost               Decimal?                  @db.Decimal(15, 2)
+  StartDate               DateTime?                 @db.Date
+  ExpectedCompletionDate  DateTime?                 @db.Date
+  Apartments              Apartments[]
+  Project_Stages          Project_Stages[]
+  Sector_Heads            Sector_Heads[]
+  Materials               Materials[]
+  Material_Usage_Log      Material_Usage_Log[]
+  Contracts               Contracts[]
+  Daily_Work_Log          Daily_Work_Log[]
+  Building_Inspection_Reports Building_Inspection_Reports[]
+}
+
+model Apartments {
+  ApartmentID     Int       @id @default(autoincrement())
+  BuildingID      Int?
+  ApartmentNumber String    @db.VarChar(10)
+  FloorNumber     Int?
+  Size            Decimal?  @db.Decimal(10, 2)
+  Price           Decimal?  @db.Decimal(15, 2)
+  Status          ApartmentStatus?
+  Buildings       Buildings? @relation(fields: [BuildingID], references: [BuildingID])
+}
+
+enum ApartmentStatus {
+  Sold
+  Available
+  Under_Construction @map("Under Construction")
+}
+
+model Project_Stages {
+  StageID    Int       @id @default(autoincrement())
+  BuildingID Int?
+  StageName  String?   @db.VarChar(50)
+  StartDate  DateTime? @db.Date
+  EndDate    DateTime? @db.Date
+  Progress   Decimal?  @db.Decimal(5, 2)
+  Buildings  Buildings? @relation(fields: [BuildingID], references: [BuildingID])
+}
+
+model Sector_Heads {
+  HeadID        Int       @id @default(autoincrement())
+  FullName      String?   @db.VarChar(100)
+  Phone         String?   @db.VarChar(15)
+  Sector        String?   @db.VarChar(50)
+  Email         String?   @db.VarChar(100)
+  BuildingID    Int?
+  MonthlySalary Decimal?  @db.Decimal(15, 2)
+  Buildings     Buildings? @relation(fields: [BuildingID], references: [BuildingID])
+  Workers       Workers[]
+}
+
+model Workers {
+  WorkerID       Int                  @id @default(autoincrement())
+  FullName       String?              @db.VarChar(100)
+  Specialization String?              @db.VarChar(50)
+  Phone          String?              @db.VarChar(15)
+  Address        String?              @db.VarChar(255)
+  HeadID         Int?
+  DailyWage      Decimal?             @db.Decimal(10, 2)
+  WorkStatus     WorkerStatus?
+  Sector_Heads   Sector_Heads?        @relation(fields: [HeadID], references: [HeadID])
+  Worker_Attendance Worker_Attendance[]
+  Worker_Payments   Worker_Payments[]
+  Material_Usage_Log Material_Usage_Log[]
+  Equipment_Usage_Log Equipment_Usage_Log[]
+  Safety_Incidents    Safety_Incidents[]
+}
+
+enum WorkerStatus {
+  Active
+  On_Leave @map("On Leave")
+}
+
+model Worker_Attendance {
+  AttendanceID Int               @id @default(autoincrement())
+  WorkerID     Int?
+  Date         DateTime?         @db.Date
+  Shift        ShiftType?
+  Status       AttendanceStatus?
+  Workers      Workers?          @relation(fields: [WorkerID], references: [WorkerID])
+}
+
+enum ShiftType {
+  Morning
+  Evening
+}
+
+enum AttendanceStatus {
+  Present
+  Absent
+  On_Leave @map("On Leave")
+}
+
+model Worker_Payments {
+  PaymentID     Int            @id @default(autoincrement())
+  WorkerID      Int?
+  AmountPaid    Decimal?       @db.Decimal(15, 2)
+  PaymentDate   DateTime?      @db.Date
+  PaymentMethod PaymentMethod?
+  Workers       Workers?       @relation(fields: [WorkerID], references: [WorkerID])
+}
+
+enum PaymentMethod {
+  Cash
+  Bank_Transfer @map("Bank Transfer")
+  bKash
+  Nagad
+}
+
+model Materials {
+  MaterialID    Int                  @id @default(autoincrement())
+  MaterialName  String?              @db.VarChar(100)
+  Category      String?              @db.VarChar(50)
+  UnitPrice     Decimal?             @db.Decimal(10, 2)
+  StockQuantity Int?
+  BuildingID    Int?
+  Buildings     Buildings?           @relation(fields: [BuildingID], references: [BuildingID])
+  Material_Usage_Log Material_Usage_Log[]
+  Material_Orders    Material_Orders[]
+}
+
+model Material_Usage_Log {
+  LogID        Int       @id @default(autoincrement())
+  MaterialID   Int?
+  BuildingID   Int?
+  WorkerID     Int?
+  DateUsed     DateTime? @db.Date
+  QuantityUsed Int?
+  UsagePurpose String?   @db.VarChar(255)
+  Materials    Materials? @relation(fields: [MaterialID], references: [MaterialID])
+  Buildings    Buildings? @relation(fields: [BuildingID], references: [BuildingID])
+  Workers      Workers?   @relation(fields: [WorkerID], references: [WorkerID])
+}
+
+model Suppliers {
+  SupplierID     Int               @id @default(autoincrement())
+  Name           String?           @db.VarChar(100)
+  ContactNumber  String?           @db.VarChar(15)
+  Address        String?           @db.VarChar(255)
+  Email          String?           @db.VarChar(100)
+  Material_Orders Material_Orders[]
+}
+
+model Material_Orders {
+  OrderID         Int       @id @default(autoincrement())
+  SupplierID      Int?
+  MaterialID      Int?
+  OrderDate       DateTime? @db.Date
+  QuantityOrdered Int?
+  TotalCost       Decimal?  @db.Decimal(15, 2)
+  Suppliers       Suppliers? @relation(fields: [SupplierID], references: [SupplierID])
+  Materials       Materials? @relation(fields: [MaterialID], references: [MaterialID])
+}
+
+model Equipment {
+  EquipmentID         Int                   @id @default(autoincrement())
+  EquipmentName       String?               @db.VarChar(100)
+  Category            String?               @db.VarChar(50)
+  EquipmentCondition  EquipmentCondition?
+  AvailabilityStatus  EquipmentStatus?
+  Equipment_Usage_Log Equipment_Usage_Log[]
+}
+
+enum EquipmentCondition {
+  New
+  Used
+}
+
+enum EquipmentStatus {
+  Available
+  In_Use        @map("In Use")
+  Under_Maintenance @map("Under Maintenance")
+}
+
+model Equipment_Usage_Log {
+  UsageLogID  Int       @id @default(autoincrement())
+  EquipmentID Int?
+  WorkerID    Int?
+  StartDate   DateTime? @db.Date
+  EndDate     DateTime? @db.Date
+  Purpose     String?   @db.VarChar(255)
+  Equipment   Equipment? @relation(fields: [EquipmentID], references: [EquipmentID])
+  Workers     Workers?   @relation(fields: [WorkerID], references: [WorkerID])
+}
+
+model Owner_Payments {
+  PaymentID     Int            @id @default(autoincrement())
+  OwnerID       Int?
+  Amount        Decimal?       @db.Decimal(15, 2)
+  PaymentDate   DateTime?      @db.Date
+  PaymentMethod OwnerPaymentMethod?
+  Owners        Owners?        @relation(fields: [OwnerID], references: [OwnerID])
+}
+
+enum OwnerPaymentMethod {
+  Cash
+  Bank_Transfer @map("Bank Transfer")
+  bKash
+  Nagad
+}
+
+model Invoices {
+  InvoiceID   Int             @id @default(autoincrement())
+  OwnerID     Int?
+  Amount      Decimal?        @db.Decimal(15, 2)
+  InvoiceDate DateTime?       @db.Date
+  DueDate     DateTime?       @db.Date
+  Status      InvoiceStatus?
+  Owners      Owners?         @relation(fields: [OwnerID], references: [OwnerID])
+}
+
+enum InvoiceStatus {
+  Paid
+  Unpaid
+}
+
+model Contracts {
+  ContractID     Int              @id @default(autoincrement())
+  BuildingID     Int?
+  ContractorName String?          @db.VarChar(100)
+  StartDate      DateTime?        @db.Date
+  EndDate        DateTime?        @db.Date
+  TotalAmount    Decimal?         @db.Decimal(15, 2)
+  Status         ContractStatus?
+  Terms          String?          @db.Text
+  Buildings      Buildings?       @relation(fields: [BuildingID], references: [BuildingID])
+}
+
+enum ContractStatus {
+  Active
+  Completed
+  Terminated
+  Pending
+}
+
+model Safety_Incidents {
+  IncidentID       Int                @id @default(autoincrement())
+  WorkerID         Int?
+  IncidentDate     DateTime?          @db.Date
+  IncidentType     String?            @db.VarChar(50)
+  ResolutionStatus ResolutionStatus?
+  Workers          Workers?           @relation(fields: [WorkerID], references: [WorkerID])
+}
+
+enum ResolutionStatus {
+  Resolved
+  Unresolved
+}
+
+model Daily_Work_Log {
+  LogID         Int       @id @default(autoincrement())
+  BuildingID    Int?
+  Date          DateTime? @db.Date
+  WorkCompleted String?   @db.Text
+  IssuesReported String?  @db.Text
+  Buildings     Buildings? @relation(fields: [BuildingID], references: [BuildingID])
+}
+
+model Building_Inspection_Reports {
+  InspectionID   Int               @id @default(autoincrement())
+  BuildingID     Int?
+  InspectorName  String?           @db.VarChar(100)
+  InspectionDate DateTime?         @db.Date
+  Findings       String?           @db.Text
+  Remarks        String?           @db.Text
+  Status         InspectionStatus?
+  Buildings      Buildings?        @relation(fields: [BuildingID], references: [BuildingID])
+}
+
+enum InspectionStatus {
+  Passed
+  Failed
+}
+
+model TransactionRecycleBin {
+  RecycleID     Int      @id @default(autoincrement())
+  OriginalTable String?  @db.VarChar(50)
+  DeletedRecord Json?
+  DeletedDate   DateTime @default(now())
+}
+
+model Users {
+  UserID    Int    @id @default(autoincrement())
+  Username  String @unique @db.VarChar(50)
+  Password  String @db.VarChar(255)
+  Role      String @default("admin") @db.VarChar(20)
+  CreatedAt DateTime @default(now())
+}
