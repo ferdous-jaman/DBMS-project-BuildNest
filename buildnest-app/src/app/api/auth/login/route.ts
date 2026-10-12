@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, isDatabaseAvailable } from "@/lib/prisma";
 import { encrypt } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 
@@ -15,12 +15,14 @@ export async function POST(request: NextRequest) {
     }
 
     let user = null;
-    try {
-      user = await prisma.users.findUnique({
-        where: { Username: username },
-      });
-    } catch (dbError) {
-      console.warn("Database unavailable, falling back to default admin check:", dbError);
+    if (await isDatabaseAvailable()) {
+      try {
+        user = await prisma.users.findUnique({
+          where: { Username: username },
+        });
+      } catch (dbError) {
+        console.warn("Database query error, falling back to default admin check:", dbError);
+      }
     }
 
     if (user) {

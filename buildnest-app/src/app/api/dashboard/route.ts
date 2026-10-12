@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, isDatabaseAvailable } from "@/lib/prisma";
 
 export async function GET() {
   try {
+    if (!(await isDatabaseAvailable())) {
+      throw new Error("Database offline");
+    }
+
     const [
       totalBuildings,
       totalOwners,

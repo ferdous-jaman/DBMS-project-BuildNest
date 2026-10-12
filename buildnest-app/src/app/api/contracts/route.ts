@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, isDatabaseAvailable } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
+    if (!(await isDatabaseAvailable())) {
+      throw new Error("Database offline");
+    }
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") || "";
